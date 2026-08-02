@@ -1,6 +1,6 @@
 const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port === '8000'
     ? "http://localhost:5000/api"
-    : "/api";
+    : "https://smart-campus-backend-g4sw.onrender.com/api";
 
 // Application State
 let token = sessionStorage.getItem("access_token");
