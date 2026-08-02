@@ -59,6 +59,9 @@ def create_app(config_class=Config):
     os.makedirs(os.path.join(app.root_path, '../uploads'), exist_ok=True)
     os.makedirs(os.path.join(app.root_path, '../database'), exist_ok=True)
     
+    with app.app_context():
+        db.create_all()
+    
     # Setup Logging
     configure_logging(app)
     

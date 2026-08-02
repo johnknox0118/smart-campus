@@ -11,6 +11,26 @@ if os.path.exists(dotenv_path):
 else:
     load_dotenv()
 
+# Database Settings & Path Resolution
+db_dir = os.path.join(base_dir, 'database')
+os.makedirs(db_dir, exist_ok=True)
+db_path = os.path.abspath(os.path.join(db_dir, 'campus.db')).replace('\\', '/')
+
+if os.name != 'nt':
+    if not db_path.startswith('/'):
+        db_path = '/' + db_path
+    default_db_uri = f'sqlite://{db_path}'
+else:
+    default_db_uri = f'sqlite:///{db_path}'
+
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    db_uri = database_url
+else:
+    db_uri = default_db_uri
+
 class Config:
     # Flask Settings
     SECRET_KEY = os.environ.get('SECRET_KEY', 'default_secret_key_12345')
@@ -19,7 +39,7 @@ class Config:
     DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
     
     # Database Settings
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(base_dir, 'database', 'campus.db'))
+    SQLALCHEMY_DATABASE_URI = db_uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security Settings
