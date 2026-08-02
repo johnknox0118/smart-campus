@@ -14,7 +14,7 @@ else:
 
 # Database Settings & Path Resolution
 database_url = os.environ.get('DATABASE_URL')
-if database_url:
+if database_url and not ('c:' in database_url.lower() or 'users' in database_url.lower() or 'desktop' in database_url.lower()):
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     db_uri = database_url
