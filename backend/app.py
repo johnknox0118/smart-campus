@@ -100,7 +100,11 @@ def create_app(config_class=Config):
     return app
 
 def configure_logging(app):
-    log_dir = os.path.join(app.root_path, '../logs')
+    if os.name != 'nt':
+        log_dir = '/tmp/logs'
+    else:
+        log_dir = os.path.join(app.root_path, '../logs')
+    os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, 'campus.log')
     
     log_level = logging.INFO

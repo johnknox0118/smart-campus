@@ -1,4 +1,5 @@
 import os
+import shutil
 from dotenv import load_dotenv
 
 # Define path to .env file
@@ -11,17 +12,25 @@ if os.path.exists(dotenv_path):
 else:
     load_dotenv()
 
-# Ensure database directory exists
-db_dir = os.path.join(base_dir, 'database')
-os.makedirs(db_dir, exist_ok=True)
-db_file = os.path.abspath(os.path.join(db_dir, 'campus.db'))
-
+# Database Settings & Path Resolution
 database_url = os.environ.get('DATABASE_URL')
 if database_url:
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     db_uri = database_url
-else:
+elif os.name != 'nt': # Linux / Render Environment
+    tmp_db_path = '/tmp/campus.db'
+    src_db_path = os.path.abspath(os.path.join(base_dir, 'database', 'campus.db'))
+    if os.path.exists(src_db_path) and not os.path.exists(tmp_db_path):
+        try:
+            shutil.copyfile(src_db_path, tmp_db_path)
+        except Exception:
+            pass
+    db_uri = f'sqlite:///{tmp_db_path}'
+else: # Windows / Local Environment
+    db_dir = os.path.join(base_dir, 'database')
+    os.makedirs(db_dir, exist_ok=True)
+    db_file = os.path.abspath(os.path.join(db_dir, 'campus.db'))
     db_uri = f'sqlite:///{db_file}'
 
 class Config:
