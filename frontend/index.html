@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Campus Management & Security System</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Toast Notifications Area -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- 1. Secure Login Container -->
+    <div id="loginSection" class="login-container">
+        <div class="login-card glass-panel">
+            <div class="brand-header">
+                <!-- Using college initials or placeholder logo -->
+                <img src="https://prathyusha.edu.in/wp-content/uploads/2024/09/PRATHYUSHA-ENGINEERING-COLLEGE-An-Autonomous-Institution-1.png" alt="PEC Logo" class="brand-logo-img">
+                <h1>Smart Campus Portal</h1>
+                <p>Management & Security Telemetry Platform</p>
+            </div>
+            
+            <div id="loginError" class="alert alert-danger d-none" role="alert" style="background: rgba(220,53,69,0.15); border: 1px solid var(--danger); color: #FFF; font-size: 0.8rem;"></div>
+            
+            <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="input-glass" placeholder="Enter username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="input-glass" placeholder="Enter password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary-glass mt-3">
+                    <i class="fa-solid fa-lock-open me-2"></i>Secure Access
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Main Dashboard Frame -->
+    <div id="dashboardSection" class="app-wrapper d-none">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar glass-panel">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-graduation-cap fa-lg" style="color: var(--accent);"></i>
+                <h2>PEC Smart Campus</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li id="menu-home" class="nav-item active">
+                    <a class="nav-link" onclick="switchView('home')">
+                        <i class="fa-solid fa-chart-pie"></i>Dashboard
+                    </a>
+                </li>
+                <li id="menu-tracking" class="nav-item">
+                    <a class="nav-link" onclick="switchView('tracking')">
+                        <i class="fa-solid fa-map-location-dot"></i>Live Campus Map
+                    </a>
+                </li>
+                <li id="menu-leaves" class="nav-item">
+                    <a class="nav-link" onclick="switchView('leaves')">
+                        <i class="fa-solid fa-calendar-minus"></i>Leave Management
+                    </a>
+                </li>
+                <li id="menu-buses" class="nav-item">
+                    <a class="nav-link" onclick="switchView('buses')">
+                        <i class="fa-solid fa-bus"></i>Bus Tracking
+                    </a>
+                </li>
+                <li id="menu-alerts" class="nav-item d-none">
+                    <a class="nav-link" onclick="switchView('alerts')">
+                        <i class="fa-solid fa-shield-halved"></i>Security Alerts
+                    </a>
+                </li>
+                <li id="menu-attendance" class="nav-item d-none">
+                    <a class="nav-link" onclick="switchView('attendance')">
+                        <i class="fa-solid fa-clipboard-user"></i>Take Attendance
+                    </a>
+                </li>
+                <li id="menu-reports" class="nav-item d-none">
+                    <a class="nav-link" onclick="switchView('reports')">
+                        <i class="fa-solid fa-file-arrow-down"></i>Attendance Reports
+                    </a>
+                </li>
+                <li id="menu-users" class="nav-item d-none">
+                    <a class="nav-link" onclick="switchView('users')">
+                        <i class="fa-solid fa-users-gear"></i>Manage Users
+                    </a>
+                </li>
+                <li id="menu-buses-config" class="nav-item d-none">
+                    <a class="nav-link" onclick="switchView('buses-config')">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>Manage Buses
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link text-danger-custom" onclick="handleLogout()" style="cursor: pointer;">
+                        <i class="fa-solid fa-right-from-bracket"></i>Sign Out
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-profile">
+                <div id="userAvatar" class="profile-avatar">A</div>
+                <div class="profile-info">
+                    <div id="profileName" class="profile-name">User Account</div>
+                    <div id="profileRole" class="profile-role">Student</div>
+                </div>
+                <a onclick="handleLogout()" class="ms-auto text-muted" title="Logout" style="cursor: pointer;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Body Frame -->
+        <main class="app-content">
+            
+            <!-- Header bar -->
+            <header class="app-header glass-panel">
+                <div class="header-title">
+                    <h2 id="viewTitle">Dashboard Overview</h2>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="btn-sos" onclick="triggerPanicSOS()">
+                        <i class="fa-solid fa-circle-exclamation me-1"></i>SOS PANIC
+                    </button>
+                    
+                    <div class="dropdown">
+                        <div class="notif-bell" id="notifBell" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-bell"></i>
+                            <span id="notifBadge" class="notif-badge d-none">0</span>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end glass-panel" aria-labelledby="notifBell" id="notifDropdown" style="width: 320px; max-height: 400px; overflow-y: auto; padding: 12px; border-color: var(--glass-border); color: #FFF; background: var(--bg-app);">
+                            <li class="dropdown-header text-muted border-bottom border-secondary pb-2 mb-2">Notifications</li>
+                            <div id="notifList">
+                                <li class="text-center py-3 text-muted">No unread notifications</li>
+                            </div>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Views -->
+            
+            <!-- VIEW 1: HOME DASHBOARD -->
+            <div id="view-home" class="dashboard-view active">
+                
+                <!-- GPS Simulation Panel (Collapsible developer panel) -->
+                <div class="simulator-panel glass-panel">
+                    <h5 style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">
+                        <i class="fa-solid fa-gamepad me-2"></i>Simulation Control Panel (CYBERSECURITY TESTING)
+                    </h5>
+                    <p class="text-muted" style="font-size: 0.75rem;">Simulate real-time GPS telemetry, mock updates, speed hacks, and geofence entry/exit from desktop.</p>
+                    <div class="simulator-controls">
+                        <select id="simGeofence" class="select-glass" onchange="loadSimCoordinates()">
+                            <option value="Academic Block">Select Geofence Zone...</option>
+                            <option value="Library">Library (Inside Campus)</option>
+                            <option value="Academic Block">Academic Block (Inside Campus)</option>
+                            <option value="Girls Hostel">Girls Hostel (Inside Campus)</option>
+                            <option value="Parking">Parking (Inside Campus)</option>
+                            <option value="Sports Ground">Sports Ground (Inside Campus)</option>
+                            <option value="Boys Hostel">Boys Hostel (Inside Campus)</option>
+                            <option value="Entire Campus">General Campus Area</option>
+                            <option value="Outside">Outside Campus Bounds</option>
+                        </select>
+                        
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="checkbox" id="simMockGPS" class="form-check-input" style="background-color: rgba(255,255,255,0.05); border-color: var(--glass-border);">
+                            <label for="simMockGPS" class="text-muted" style="font-size: 0.8rem;">Mock GPS API Flag</label>
+                        </div>
+                        
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="checkbox" id="simSpeedHack" class="form-check-input" style="background-color: rgba(255,255,255,0.05); border-color: var(--glass-border);">
+                            <label for="simSpeedHack" class="text-muted" style="font-size: 0.8rem;">Speed Hack (Impossible Jump)</label>
+                        </div>
+                        
+                        <button class="btn-action-glass primary" onclick="sendSimulatedGPS()">
+                            <i class="fa-solid fa-paper-plane me-1"></i>Emit GPS Log
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Cards are populated programmatically based on user role -->
+                </div>
+
+                <!-- Campus Feature Hub (Quick Access Dashboard Panel) -->
+                <div class="glass-panel p-4 mb-4" id="featureHubSection">
+                    <h3 class="mb-2"><i class="fa-solid fa-cubes-stacked me-2" style="color: var(--accent);"></i>Campus Core Feature Hub</h3>
+                    <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 20px;">Instantly access and manage all system sub-modules from this centralized dashboard.</p>
+                    <div class="row" id="featureHubGrid">
+                        <!-- Populated programmatically by role in JS -->
+                    </div>
+                </div>
+
+                <!-- visual split map/charts (Admin view) -->
+                <div class="visual-section d-none" id="adminVisuals">
+                    <div class="visual-container glass-panel">
+                        <div class="visual-header">
+                            <h3>Campus Active Telemetry Map</h3>
+                            <span class="badge" style="background: rgba(237,151,0,0.1); color: var(--accent);">Live Tracking</span>
+                        </div>
+                        <div id="adminMap" class="map-viewport"></div>
+                    </div>
+                    
+                    <div class="visual-container glass-panel">
+                        <div class="visual-header">
+                            <h3>Analytics Summary</h3>
+                        </div>
+                        <div class="chart-viewport">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- personal details/forms (Student view) -->
+                <div class="row d-none" id="studentVisuals">
+                    <div class="col-md-6 mb-4">
+                        <div class="visual-container glass-panel h-100">
+                            <h3>My Tracking Location</h3>
+                            <div id="studentMap" class="map-viewport mt-3"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="visual-container glass-panel h-100">
+                            <h3>Personal Attendance Record</h3>
+                            <div class="table-container mt-3">
+                                <table class="table-glass">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Check-In</th>
+                                            <th>Check-Out</th>
+                                            <th>Hours</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentAttendanceTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-muted">No attendance logs logged yet</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- VIEW 2: LIVE CAMPUS MAP & SECURITY FEED -->
+            <div id="view-tracking" class="dashboard-view">
+                <div class="row">
+                    <!-- Left: Interactive Map -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="glass-panel p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <h3 class="m-0">Full Interactive Campus Map & Geofence Layout</h3>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <div class="position-relative" style="min-width: 280px;">
+                                        <input type="text" id="mapUserSearch" class="input-glass" placeholder="Search person by ID or name..." oninput="filterMapUsers()">
+                                        <div id="searchSuggestions" class="glass-panel position-absolute w-100 mt-1 d-none" style="max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                                            <!-- suggestions -->
+                                        </div>
+                                    </div>
+                                    <span class="text-muted" style="font-size: 0.75rem;" id="mapTimerSpan">Updates every 10 seconds</span>
+                                </div>
+                            </div>
+                            <div id="trackingViewMap" style="height: 60vh; border-radius: 8px; border: 1px solid var(--glass-border);"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Security Alerts Feed (Visible to Admin and Security) -->
+                    <div class="col-lg-4 mb-4" id="alertsPanelContainer">
+                        <div class="glass-panel p-4 h-100 d-flex flex-column" style="background: rgba(255, 255, 255, 0.01);">
+                            <h3 class="mb-3"><i class="fa-solid fa-shield-halved me-2 text-danger"></i>Security Alerts Feed</h3>
+                            <div class="alert-feed flex-grow-1" id="securityAlertsList" style="max-height: 60vh; overflow-y: auto;">
+                                <div class="text-center py-5 text-muted">No active emergency alerts or security warnings.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: LEAVE MANAGEMENT -->
+            <div id="view-leaves" class="dashboard-view">
+                
+                <!-- Staff/Admin Approvals Panel -->
+                <div class="glass-panel p-4 mb-4 d-none" id="leaveApprovalPanel">
+                    <h3 class="mb-3">Pending Student Leave Applications</h3>
+                    <div class="table-container">
+                        <table class="table-glass">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Department</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Reason</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingLeavesTable">
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-muted">No pending leave requests</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Student Leave Application Form -->
+                <div class="row">
+                    <div class="col-md-6 mb-4" id="leaveApplicationBlock">
+                        <div class="glass-panel p-4 h-100">
+                            <h3>File Leave Request</h3>
+                            <form id="leaveRequestForm" onsubmit="event.preventDefault(); submitLeaveRequest();" class="mt-3">
+                                <div class="row">
+                                    <div class="col-6 mb-3">
+                                        <label for="leaveStart" class="text-muted" style="font-size: 0.75rem;">Start Date</label>
+                                        <input type="date" id="leaveStart" class="input-glass" required>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label for="leaveEnd" class="text-muted" style="font-size: 0.75rem;">End Date</label>
+                                        <input type="date" id="leaveEnd" class="input-glass" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="leaveReason" class="text-muted" style="font-size: 0.75rem;">Reason for Leave</label>
+                                    <textarea id="leaveReason" class="input-glass" rows="4" placeholder="Describe the reason for leave request" required></textarea>
+                                </div>
+                                <button type="submit" class="btn-action-glass primary w-100">
+                                    <i class="fa-solid fa-paper-plane me-1"></i>Submit Leave Request
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="glass-panel p-4 h-100">
+                            <h3>Leave Request Log</h3>
+                            <div class="table-container mt-3">
+                                <table class="table-glass">
+                                    <thead>
+                                        <tr>
+                                            <th>From</th>
+                                            <th>To</th>
+                                            <th>Reason</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leaveHistoryTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3 text-muted">No past leave applications</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: BUS TRACKING & FLEET CONFIG -->
+            <div id="view-buses" class="dashboard-view">
+                
+                <!-- Bus Tab Header (visible to Admin) -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="d-flex gap-2" id="busTabSelectors">
+                        <button class="btn-action-glass active" id="btnBusTabTracker" onclick="switchBusSubView('tracker')">
+                            <i class="fa-solid fa-map-location-dot me-1"></i>Live Transit Tracker
+                        </button>
+                        <button class="btn-action-glass d-none" id="btnBusTabManage" onclick="switchBusSubView('manage')">
+                            <i class="fa-solid fa-screwdriver-wrench me-1"></i>Manage Fleet & Routes
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- SUB-VIEW 1: Live Transit Tracker -->
+                <div id="busSubViewTracker" class="bus-subview active">
+                    <!-- Driver Trip Panel -->
+                    <div class="glass-panel p-4 mb-4 d-none" id="driverBusPanel">
+                        <h3 class="mb-3">Bus Telemetry Driver Console</h3>
+                        <div class="row align-items-center">
+                            <div class="col-md-4 mb-3">
+                                <label for="driverNextStop" class="text-muted" style="font-size: 0.75rem;">Current Target Stop</label>
+                                <select id="driverNextStop" class="select-glass w-100">
+                                    <option value="Poonamallee Junction">Poonamallee Junction</option>
+                                    <option value="Tiruvallur Rail Station">Tiruvallur Rail Station</option>
+                                    <option value="Aranvayal Kuppam">Aranvayal Kuppam</option>
+                                    <option value="PEC Campus Yard">PEC Campus Yard (Main Campus)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="driverEta" class="text-muted" style="font-size: 0.75rem;">ETA to Campus (Mins)</label>
+                                <input type="number" id="driverEta" class="input-glass" min="0" max="180" value="15">
+                            </div>
+                            <div class="col-md-5 mb-3 d-flex gap-2 align-items-end mt-4">
+                                <button class="btn-action-glass primary flex-grow-1" onclick="toggleTrip(true)" id="btnStartTrip">
+                                    <i class="fa-solid fa-play me-1"></i>Start Trip
+                                </button>
+                                <button class="btn-action-glass flex-grow-1" onclick="toggleTrip(false)" id="btnEndTrip" disabled>
+                                    <i class="fa-solid fa-stop me-1"></i>End Trip
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-7 mb-4">
+                            <div class="glass-panel p-4 h-100">
+                                <h3>Live Transit Locations</h3>
+                                <div class="table-container mt-3">
+                                    <table class="table-glass">
+                                        <thead>
+                                            <tr>
+                                                <th>Bus No</th>
+                                                <th>Route</th>
+                                                <th>Driver</th>
+                                                <th>Next Stop</th>
+                                                <th>ETA</th>
+                                                <th>Speed</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="busesTable">
+                                            <tr>
+                                                <td colspan="7" class="text-center py-3 text-muted">No bus operations logged</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-5 mb-4">
+                            <div class="glass-panel p-4 h-100">
+                                <h3>Active Transit Map</h3>
+                                <div id="busMap" class="map-viewport mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SUB-VIEW 2: Manage Fleet & Routes (Admin Only, content populated from VIEW 9) -->
+                <div id="busSubViewManage" class="bus-subview d-none">
+                    <div class="row">
+                        <!-- Left: Bus Table -->
+                        <div class="col-lg-8 mb-4">
+                            <div class="glass-panel p-4 h-100">
+                                <h3 class="mb-3"><i class="fa-solid fa-bus me-2" style="color: var(--accent);"></i>Bus Fleet Configuration</h3>
+                                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                                    <table class="table-glass w-100">
+                                        <thead>
+                                            <tr>
+                                                <th>Bus Number</th>
+                                                <th>Route Number</th>
+                                                <th>Driver Name</th>
+                                                <th>Driver Number</th>
+                                                <th>Starting Point</th>
+                                                <th>Middle Stop Places Names</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="busConfigTableBody">
+                                            <tr><td colspan="7" class="text-center py-4 text-muted"><i class="fa-solid fa-circle-notch fa-spin me-2"></i>Loading fleet...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right: Add/Edit Form -->
+                        <div class="col-lg-4 mb-4">
+                            <div class="glass-panel p-4">
+                                <h3 id="busFormTitle"><i class="fa-solid fa-circle-plus me-2" style="color: var(--accent);"></i>Add Bus Registry</h3>
+                                <form id="busManageForm" onsubmit="event.preventDefault(); saveBusConfig();" class="mt-3">
+                                    <input type="hidden" id="manageBusId" value="">
+                                    
+                                    <div class="mb-3">
+                                        <label for="manageBusNumber" class="text-muted" style="font-size: 0.75rem;">Bus Number</label>
+                                        <input type="text" id="manageBusNumber" class="input-glass" required placeholder="e.g. Bus 15">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="manageBusRoute" class="text-muted" style="font-size: 0.75rem;">Route Number</label>
+                                        <input type="text" id="manageBusRoute" class="input-glass" required placeholder="e.g. Route 10A">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="manageBusDriver" class="text-muted" style="font-size: 0.75rem;">Driver Name</label>
+                                        <select id="manageBusDriver" class="select-glass w-100">
+                                            <option value="">Unassigned</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="manageBusDriverPhone" class="text-muted" style="font-size: 0.75rem;">Driver Number (Phone)</label>
+                                        <input type="text" id="manageBusDriverPhone" class="input-glass" required placeholder="e.g. +91 9876543210">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="manageBusStart" class="text-muted" style="font-size: 0.75rem;">Starting Point</label>
+                                        <select id="manageBusStart" class="select-glass w-100">
+                                            <option value="Poonamallee Junction">Poonamallee Junction</option>
+                                            <option value="Tiruvallur Rail Station">Tiruvallur Rail Station</option>
+                                            <option value="Aranvayal Kuppam">Aranvayal Kuppam</option>
+                                            <option value="Nazarathpet">Nazarathpet</option>
+                                            <option value="Sriperumbudur">Sriperumbudur</option>
+                                            <option value="Avadi">Avadi</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="manageBusStops" class="text-muted" style="font-size: 0.75rem;">Middle Stop Places Names (Comma Separated)</label>
+                                        <input type="text" id="manageBusStops" class="input-glass" required placeholder="e.g. Poonamallee Junction, Aranvayal Kuppam, PEC Campus Yard">
+                                        <small class="text-muted" style="font-size: 0.65rem;">Comma separated list of transit stops.</small>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2 mt-4">
+                                        <button type="submit" class="btn-action-glass primary flex-grow-1">
+                                            <i class="fa-solid fa-floppy-disk me-1"></i>Save Bus
+                                        </button>
+                                        <button type="button" class="btn-action-glass flex-grow-1" onclick="resetBusForm()">
+                                            <i class="fa-solid fa-rotate-left me-1"></i>Clear
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- VIEW 6: ATTENDANCE CENTER (Staff & Admin) -->
+            <div id="view-attendance" class="dashboard-view">
+                
+                <!-- Attendance Tab Header -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="d-flex gap-2" id="attendanceTabSelectors">
+                        <button class="btn-action-glass active" id="btnAttTabTake" onclick="switchAttSubView('take')">
+                            <i class="fa-solid fa-clipboard-user me-1"></i>Take Attendance
+                        </button>
+                        <button class="btn-action-glass d-none" id="btnAttTabReports" onclick="switchAttSubView('reports')">
+                            <i class="fa-solid fa-file-arrow-down me-1"></i>Attendance Reports
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- SUB-VIEW 1: Take Attendance -->
+                <div id="attSubViewTake" class="att-subview active">
+                    <div class="glass-panel p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="m-0">Student Attendance Dashboard</h3>
+                            <div class="d-flex gap-2">
+                                <input type="text" id="attendanceSearch" class="input-glass" placeholder="Search by name..." style="max-width: 250px;" oninput="filterAttendanceTable()">
+                                <button class="btn-action-glass primary" onclick="loadAttendanceList()">
+                                    <i class="fa-solid fa-rotate me-1"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filters Toolbar -->
+                        <div class="d-flex gap-2 mb-3 flex-wrap align-items-center" style="background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                            <span class="text-muted" style="font-size: 0.8rem;"><i class="fa-solid fa-filter me-1"></i>Filters:</span>
+                            
+                            <select id="filterAttDept" class="select-glass" style="min-width: 140px;" onchange="filterAttendanceTable()">
+                                <option value="">All Departments</option>
+                                <option value="CSE">CSE</option>
+                                <option value="AI&ML">AI&ML</option>
+                                <option value="AI&DS">AI&DS</option>
+                                <option value="CYBER SECURITY">CYBER SECURITY</option>
+                                <option value="IT">IT</option>
+                                <option value="EEE">EEE</option>
+                                <option value="ECE">ECE</option>
+                                <option value="MECH">MECH</option>
+                                <option value="BIO TECH">BIO TECH</option>
+                                <option value="CSBS">CSBS</option>
+                                <option value="MBA">MBA</option>
+                            </select>
+                            
+                            <select id="filterAttYear" class="select-glass" style="min-width: 120px;" onchange="filterAttendanceTable()">
+                                <option value="">All Years</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
+                            
+                            <select id="filterAttSection" class="select-glass" style="min-width: 100px;" onchange="filterAttendanceTable()">
+                                <option value="">All Sections</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                            </select>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table-glass w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th>Department</th>
+                                        <th>Last Seen Geofence</th>
+                                        <th>Check-in</th>
+                                        <th>Check-out</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceListTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SUB-VIEW 2: Attendance Reports (Admin Only) -->
+                <div id="attSubViewReports" class="att-subview d-none">
+                    <div class="glass-panel p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h3 class="m-0"><i class="fa-solid fa-file-arrow-down me-2" style="color: var(--accent);"></i>Attendance Reports Download Center</h3>
+                        <div class="d-flex gap-2 align-items-center">
+                            <label class="text-muted" style="font-size: 0.75rem; white-space: nowrap;">Report Date:</label>
+                            <input type="date" id="reportDate" class="input-glass" style="max-width: 180px;">
+                            <button class="btn-action-glass primary" onclick="loadReportSummary()">
+                                <i class="fa-solid fa-rotate me-1"></i>Load
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards Row -->
+                    <div class="row mb-4" id="reportSummaryCards">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Export Center Buttons -->
+                    <div class="d-flex gap-3 mb-4 flex-wrap align-items-center" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size: 0.85rem; font-weight: 600;"><i class="fa-solid fa-cloud-arrow-down me-1" style="color: var(--accent);"></i>Export Center:</span>
+                        
+                        <!-- Student Reports -->
+                        <div class="d-flex gap-2">
+                            <button class="btn-action-glass primary" onclick="downloadReport('excel', 'Student')" id="btnStudentExcel">
+                                <i class="fa-solid fa-file-excel me-1" style="color: #27AE60;"></i>Student Report (Excel)
+                            </button>
+                            <button class="btn-action-glass primary" onclick="downloadReport('pdf', 'Student')" id="btnStudentPdf">
+                                <i class="fa-solid fa-file-pdf me-1" style="color: #E74C3C;"></i>Student Report (PDF)
+                            </button>
+                        </div>
+                        
+                        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15);" class="admin-only-report-elem"></div>
+                        
+                        <!-- Staff Reports -->
+                        <div class="d-flex gap-2 admin-only-report-elem">
+                            <button class="btn-action-glass primary" onclick="downloadReport('excel', 'Staff')" id="btnStaffExcel">
+                                <i class="fa-solid fa-file-excel me-1" style="color: #27AE60;"></i>Staff Report (Excel)
+                            </button>
+                            <button class="btn-action-glass primary" onclick="downloadReport('pdf', 'Staff')" id="btnStaffPdf">
+                                <i class="fa-solid fa-file-pdf me-1" style="color: #E74C3C;"></i>Staff Report (PDF)
+                            </button>
+                        </div>
+
+                        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.15);" class="admin-only-report-elem"></div>
+
+                        <!-- Full Report -->
+                        <div class="d-flex gap-2 admin-only-report-elem">
+                            <button class="btn-action-glass" onclick="downloadReport('excel')" id="btnAllExcel">
+                                <i class="fa-solid fa-file-excel me-1" style="color: #ccc;"></i>Full (Excel)
+                            </button>
+                            <button class="btn-action-glass" onclick="downloadReport('pdf')" id="btnAllPdf">
+                                <i class="fa-solid fa-file-pdf me-1" style="color: #ccc;"></i>Full (PDF)
+                            </button>
+                        </div>
+                    </div>
+ 
+                    <!-- Student Section -->
+                    <div class="glass-panel p-3 mb-4" style="background: rgba(255,255,255,0.02);">
+                        <h4 class="m-0 mb-3" style="font-size: 1.1rem;"><i class="fa-solid fa-user-graduate me-2"></i>Student Attendance</h4>
+                        <div class="table-responsive">
+                            <table class="table-glass w-100">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Check-In</th>
+                                        <th>Check-Out</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportStudentTableBody">
+                                    <tr><td colspan="7" class="text-center py-3 text-muted">Select a date and click Load</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+ 
+                    <!-- Staff Section -->
+                    <div class="glass-panel p-3" style="background: rgba(255,255,255,0.02);" id="reportStaffSection">
+                        <h4 class="m-0 mb-3" style="font-size: 1.1rem;"><i class="fa-solid fa-chalkboard-user me-2"></i>Staff Attendance</h4>
+                        <div class="table-responsive">
+                            <table class="table-glass w-100">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Check-In</th>
+                                        <th>Check-Out</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportStaffTableBody">
+                                    <tr><td colspan="7" class="text-center py-3 text-muted">Select a date and click Load</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            
+                </div>
+                
+            </div>
+
+            <!-- VIEW 8: USER MANAGEMENT (Admin Only) -->
+            <div id="view-users" class="dashboard-view">
+                <div class="row">
+                    <!-- Left: User Directory Table -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="glass-panel p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h3 class="m-0"><i class="fa-solid fa-users me-2" style="color: var(--accent);"></i>User Directory</h3>
+                                <input type="text" id="userDirectorySearch" class="input-glass" placeholder="Search by name or email..." style="max-width: 250px;" oninput="filterUserDirectoryTable()">
+                            </div>
+                            
+                            <!-- Sorting & Filter Options Row -->
+                            <div class="d-flex gap-2 mb-3 align-items-center flex-wrap" style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                                <span style="font-size: 0.75rem; font-weight: 600;"><i class="fa-solid fa-filter me-1 text-accent" style="color: var(--accent);"></i>Filters:</span>
+                                <div>
+                                    <select id="filterCategory" class="select-glass" onchange="filterUserDirectoryTable()" style="font-size: 0.75rem; padding: 4px 8px;">
+                                        <option value="">All Categories</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Staff">Staff</option>
+                                        <option value="Student">Student</option>
+                                        <option value="Driver">Driver</option>
+                                        <option value="Security">Security</option>
+                                        <option value="Non Teaching Staff">Non Teaching</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="filterYear" class="select-glass" onchange="filterUserDirectoryTable()" style="font-size: 0.75rem; padding: 4px 8px;">
+                                        <option value="">All Years</option>
+                                        <option value="1st Year">1st Year</option>
+                                        <option value="2nd Year">2nd Year</option>
+                                        <option value="3rd Year">3rd Year</option>
+                                        <option value="4th Year">4th Year</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="filterDept" class="select-glass" onchange="filterUserDirectoryTable()" style="font-size: 0.75rem; padding: 4px 8px;">
+                                        <option value="">All Departments</option>
+                                        <option value="CSE">CSE</option>
+                                        <option value="AI&ML">AI&ML</option>
+                                        <option value="AI&DS">AI&DS</option>
+                                        <option value="CYBER SECURITY">CYBER SECURITY</option>
+                                        <option value="IT">IT</option>
+                                        <option value="EEE">EEE</option>
+                                        <option value="ECE">ECE</option>
+                                        <option value="MECH">MECH</option>
+                                        <option value="BIO TECH">BIO TECH</option>
+                                        <option value="CSBS">CSBS</option>
+                                        <option value="MBA">MBA</option>
+                                    </select>
+                                </div>
+                                <div class="ms-auto d-flex gap-1">
+                                    <button class="btn-action-glass btn-sm" onclick="sortDirectory('username')" style="font-size: 0.7rem; padding: 4px 8px;">Sort Name <i class="fa-solid fa-sort-alpha-down"></i></button>
+                                    <button class="btn-action-glass btn-sm" onclick="sortDirectory('custom_id')" style="font-size: 0.7rem; padding: 4px 8px;">Sort ID <i class="fa-solid fa-sort-numeric-down"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                                <table class="table-glass w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Gmail</th>
+                                            <th>Category</th>
+                                            <th>Department</th>
+                                            <th>Year</th>
+                                            <th>Mobile No</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="userDirectoryTableBody">
+                                        <tr><td colspan="8" class="text-center py-4 text-muted"><i class="fa-solid fa-circle-notch fa-spin me-2"></i>Loading directory...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Add/Edit Form -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="glass-panel p-4">
+                             <h3 id="userFormTitle"><i class="fa-solid fa-user-plus me-2" style="color: var(--accent);"></i>Add User Account</h3>
+                             <form id="userManageForm" onsubmit="event.preventDefault(); saveUserAccount();" class="mt-3">
+                                 <input type="hidden" id="manageUserId" value="">
+                                 
+                                 <div class="mb-3">
+                                     <label for="manageUserCustomId" class="text-muted" style="font-size: 0.75rem;">ID</label>
+                                     <input type="text" id="manageUserCustomId" class="input-glass" required placeholder="e.g. PEC2026CS01">
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label for="manageUsername" class="text-muted" style="font-size: 0.75rem;">Name</label>
+                                     <input type="text" id="manageUsername" class="input-glass" required placeholder="Enter full name">
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label for="manageEmail" class="text-muted" style="font-size: 0.75rem;">Gmail</label>
+                                     <input type="email" id="manageEmail" class="input-glass" required placeholder="name@gmail.com">
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label for="managePassword" class="text-muted" style="font-size: 0.75rem;">Password</label>
+                                     <input type="password" id="managePassword" class="input-glass" placeholder="Enter password (leave empty to keep current)">
+                                     <small class="text-muted" style="font-size: 0.65rem;">Min 8 chars, 1 uppercase, 1 lowercase, 1 number.</small>
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label for="manageRole" class="text-muted" style="font-size: 0.75rem;">Category</label>
+                                     <select id="manageRole" class="select-glass w-100" required onchange="toggleUserYearSection()">
+                                         <option value="Admin">Admin</option>
+                                         <option value="Staff">Staff</option>
+                                         <option value="Student">Student</option>
+                                         <option value="Driver">Driver</option>
+                                         <option value="Security">Security</option>
+                                         <option value="Non Teaching Staff">Non Teaching</option>
+                                     </select>
+                                 </div>
+                                 
+                                 <div class="mb-3 d-none" id="userYearSection">
+                                     <div class="row">
+                                         <div class="col-6">
+                                             <label for="manageYear" class="text-muted" style="font-size: 0.75rem;">Year</label>
+                                             <select id="manageYear" class="select-glass w-100">
+                                                 <option value="1st Year">1st Year</option>
+                                                 <option value="2nd Year">2nd Year</option>
+                                                 <option value="3rd Year">3rd Year</option>
+                                                 <option value="4th Year">4th Year</option>
+                                             </select>
+                                         </div>
+                                         <div class="col-6">
+                                             <label for="manageSection" class="text-muted" style="font-size: 0.75rem;">Section</label>
+                                             <select id="manageSection" class="select-glass w-100">
+                                                 <option value="A">A</option>
+                                                 <option value="B">B</option>
+                                                 <option value="C">C</option>
+                                             </select>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label for="manageDept" class="text-muted" style="font-size: 0.75rem;">Department</label>
+                                     <select id="manageDept" class="select-glass w-100" required>
+                                         <option value="CSE">CSE</option>
+                                         <option value="AI&ML">AI&ML</option>
+                                         <option value="AI&DS">AI&DS</option>
+                                         <option value="CYBER SECURITY">CYBER SECURITY</option>
+                                         <option value="IT">IT</option>
+                                         <option value="EEE">EEE</option>
+                                         <option value="ECE">ECE</option>
+                                         <option value="MECH">MECH</option>
+                                         <option value="BIO TECH">BIO TECH</option>
+                                         <option value="CSBS">CSBS</option>
+                                         <option value="MBA">MBA</option>
+                                     </select>
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label for="manageUserMobile" class="text-muted" style="font-size: 0.75rem;">Mobile No</label>
+                                     <input type="text" id="manageUserMobile" class="input-glass" required placeholder="e.g. +91 9876543210">
+                                 </div>
+                                 
+                                 <div class="mb-3 d-flex gap-2 align-items-center">
+                                     <input type="checkbox" id="manageIsActive" class="form-check-input" checked style="background-color: rgba(255,255,255,0.05); border-color: var(--glass-border);">
+                                     <label for="manageIsActive" class="text-muted mb-0" style="font-size: 0.8rem;">Account Active & Enabled</label>
+                                 </div>
+                                 
+                                 <div class="d-flex gap-2 mt-4">
+                                     <button type="submit" class="btn-action-glass primary flex-grow-1">
+                                         <i class="fa-solid fa-floppy-disk me-1"></i>Save User
+                                     </button>
+                                     <button type="button" class="btn-action-glass flex-grow-1" onclick="resetUserForm()">
+                                         <i class="fa-solid fa-rotate-left me-1"></i>Clear
+                                     </button>
+                                 </div>
+                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            </main>
+
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet.js MAP API -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- App Logic Script -->
+    <script src="js/app.js?v=20"></script>
+</body>
+</html>
