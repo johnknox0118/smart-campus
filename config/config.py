@@ -11,17 +11,10 @@ if os.path.exists(dotenv_path):
 else:
     load_dotenv()
 
-# Database Settings & Path Resolution
+# Ensure database directory exists
 db_dir = os.path.join(base_dir, 'database')
 os.makedirs(db_dir, exist_ok=True)
-db_path = os.path.abspath(os.path.join(db_dir, 'campus.db')).replace('\\', '/')
-
-if os.name != 'nt':
-    if not db_path.startswith('/'):
-        db_path = '/' + db_path
-    default_db_uri = f'sqlite://{db_path}'
-else:
-    default_db_uri = f'sqlite:///{db_path}'
+db_file = os.path.abspath(os.path.join(db_dir, 'campus.db'))
 
 database_url = os.environ.get('DATABASE_URL')
 if database_url:
@@ -29,7 +22,7 @@ if database_url:
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     db_uri = database_url
 else:
-    db_uri = default_db_uri
+    db_uri = f'sqlite:///{db_file}'
 
 class Config:
     # Flask Settings
@@ -58,48 +51,49 @@ class Config:
             "type": "circle",
             "lat": 13.092233,
             "lng": 79.973900,
-            "radius": 500  # meters
-        },
-        "Library": {
-            "type": "circle",
-            "lat": 13.092300,
-            "lng": 79.973900,
-            "radius": 30
+            "radius": 500,
+            "color": "#3A5CCC"
         },
         "Academic Block": {
             "type": "circle",
             "lat": 13.092233,
             "lng": 79.973900,
-            "radius": 100
+            "radius": 100,
+            "color": "#2ecc71"
+        },
+        "Library": {
+            "type": "circle",
+            "lat": 13.092300,
+            "lng": 79.973900,
+            "radius": 30,
+            "color": "#e74c3c"
         },
         "Girls Hostel": {
             "type": "circle",
             "lat": 13.091300,
             "lng": 79.972300,
-            "radius": 70
+            "radius": 70,
+            "color": "#9b59b6"
         },
         "Parking": {
             "type": "circle",
             "lat": 13.093200,
             "lng": 79.973900,
-            "radius": 50
+            "radius": 50,
+            "color": "#f1c40f"
         },
         "Sports Ground": {
             "type": "circle",
             "lat": 13.092200,
             "lng": 79.971500,
-            "radius": 90
+            "radius": 90,
+            "color": "#1abc9c"
         },
         "Boys Hostel": {
             "type": "circle",
             "lat": 13.089800,
             "lng": 79.974900,
-            "radius": 60
+            "radius": 60,
+            "color": "#e67e22"
         }
     }
-    
-    # Academic Hours (for auto attendance)
-    COLLEGE_START_HOUR = 8  # 8:00 AM
-    COLLEGE_END_HOUR = 16   # 4:00 PM
-    LATE_THRESHOLD_MINS = 30  # Present, but marked 'Late' if checked in after 8:30 AM
-    HALF_DAY_THRESHOLD_HOURS = 4  # Marked 'Half Day' if checked in for less than 4 hours
